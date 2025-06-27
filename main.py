@@ -1,3 +1,6 @@
+# To access virtual environment, use:
+# source venv/bin/activate
+
 import pygame
 from constants import *
 from player import Player
