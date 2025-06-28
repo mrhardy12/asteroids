@@ -1,10 +1,13 @@
 # To access virtual environment, use:
 # source venv/bin/activate
 
+import sys
 import pygame
 from constants import *
 from player import Player
-from asteroidfield import *
+from shot import Shot
+from asteroid import Asteroid
+from asteroidfield import AsteroidField
 
 
 def main():
@@ -23,10 +26,12 @@ def main():
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
+    shots = pygame.sprite.Group()
 
     # Sets player groups and variable
     Player.containers = (updatable, drawable)
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+    Shot.containers = (updatable, drawable, shots)
 
     # Sets asteroid groups and field variable. Enables asteroids to spawn
     Asteroid.containers = (asteroids, updatable, drawable)
@@ -122,6 +127,12 @@ def main():
             for object in drawable:
                 object.draw(screen)
             updatable.update(dt)
+
+            # Game over when collision with asteroid
+            for asteroid in asteroids:
+                if asteroid.collision(player):
+                    print("Game over!")
+                    sys.exit()
 
         pygame.display.flip()
         
