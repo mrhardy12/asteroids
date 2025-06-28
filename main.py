@@ -30,8 +30,8 @@ def main():
 
     # Sets player groups and variable
     Player.containers = (updatable, drawable)
-    player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
     Shot.containers = (updatable, drawable, shots)
+    player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
     # Sets asteroid groups and field variable. Enables asteroids to spawn
     Asteroid.containers = (asteroids, updatable, drawable)
