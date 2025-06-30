@@ -10,5 +10,6 @@ PLAYER_RADIUS = 20
 PLAYER_TURN_SPEED = 330 # incremented by 10%
 PLAYER_SPEED = 220 # incremented by 10%
 PLAYER_SHOT_SPEED = 550 # incremented by 10%
+PLAYER_SHOOT_COOLDOWN = 0.27 # incremented by 10%
 
 SHOT_RADIUS = 5

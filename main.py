@@ -1,5 +1,5 @@
 # To access virtual environment, use:
-# source venv/bin/activate
+# source .venv/bin/activate
 
 import sys
 import pygame
@@ -55,17 +55,21 @@ def main():
                 return
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if not paused:
-                        paused = True
-                    elif paused and not countdown_active:
+                    if paused and not countdown_active:
+                        paused = False
                         countdown_active = True
                         countdown_timer = 3.0 + dt
-                elif event.key == pygame.K_q and paused:
+                    elif countdown_active:
+                        paused = True
+                        countdown_active = False
+                    elif not paused:
+                        paused = True
+                elif event.key == pygame.K_q and paused and not countdown_active:
                     return
 
-        if paused:
+        if paused or countdown_active:
             # Setting unpause countdown
-            if countdown_active:
+            if countdown_active and not paused:
                 countdown_timer -= dt
 
                 # Create countdown protocol
@@ -128,11 +132,17 @@ def main():
                 object.draw(screen)
             updatable.update(dt)
 
-            # Game over when collision with asteroid
             for asteroid in asteroids:
+                # Game over when collision with asteroid
                 if asteroid.collision(player):
                     print("Game over!")
                     sys.exit()
+
+                # Destroy asteroids when shot
+                for shot in shots:
+                    if asteroid.collision(shot):
+                        shot.kill()
+                        asteroid.split()
 
         pygame.display.flip()
         
