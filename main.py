@@ -6,6 +6,7 @@ import pygame
 from constants import *
 from player import Player
 from shot import Shot
+from score import Score
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
 
@@ -15,23 +16,28 @@ def main():
     pygame.init()
     pygame.font.init()
     font = pygame.font.Font(None, 74)
+    score_font = pygame.font.SysFont("monospace", 52)
     small_font = pygame.font.Font(None, 36)
 
     # Creates clock and change in time
     clock = pygame.time.Clock()
     dt = 0
 
-    # Sets base variables for screen and groups
+    # Sets base variables for game logic
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+    # Sets base groups for game objects
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
     shots = pygame.sprite.Group()
 
-    # Sets player groups and variable
+    # Sets player and game groups and variable
     Player.containers = (updatable, drawable)
     Shot.containers = (updatable, drawable, shots)
+    Score.containers = (updatable, drawable)
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+    score = Score(score_font)
 
     # Sets asteroid groups and field variable. Enables asteroids to spawn
     Asteroid.containers = (asteroids, updatable, drawable)
@@ -83,7 +89,8 @@ def main():
                     object.draw(screen)
 
                 # Render countdown
-                countdown_text = font.render(f"{int(countdown_timer) + 1}", True, "white")
+                countdown_text = font.render(f"{int(countdown_timer) + 1}",
+                                             True, "white")
                 text_rect = countdown_text.get_rect(
                     center = (screen.get_width() // 2,
                               screen.get_height() // 2)
@@ -143,6 +150,9 @@ def main():
                     if asteroid.collision(shot):
                         shot.kill()
                         asteroid.split()
+                        score.gain_score(asteroid)
+                        print(score.score) # debug to make sure score increments correctly
+                        # print(score) will be removed once score renders in-game
 
         pygame.display.flip()
         
