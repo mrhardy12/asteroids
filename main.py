@@ -151,9 +151,7 @@ def main():
                         shot.kill()
                         asteroid.split()
                         score.gain_score(asteroid)
-                        print(score.score) # debug to make sure score increments correctly
-                        # print(score) will be removed once score renders in-game
-
+                        
         pygame.display.flip()
         
         # 60 FPS cap
