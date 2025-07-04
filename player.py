@@ -5,10 +5,12 @@ from shot import Shot
 
 
 class Player(CircleShape):
-    def __init__(self, x, y):
+    def __init__(self, x, y, lives):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.shot_timer = 0
+        self.invuln_timer = 0.5
+        self.lives = lives
 
     # Defines a triangle
     def triangle(self):
@@ -20,8 +22,8 @@ class Player(CircleShape):
         return [a, b, c]
     
     # Draws the player as a triangle
-    def draw(self, screen):
-        pygame.draw.polygon(screen, "white", self.triangle(), 2)
+    def draw(self, screen, color = "white"):
+        pygame.draw.polygon(screen, color, self.triangle(), 2)
 
     def rotate(self, dt):
         self.rotation += PLAYER_TURN_SPEED * dt
@@ -50,5 +52,6 @@ class Player(CircleShape):
             return
         self.shot_timer = PLAYER_SHOOT_COOLDOWN
         shot = Shot(self.position.x, self.position.y, SHOT_RADIUS)
-        shot.velocity = (pygame.Vector2(0, 1).rotate(self.rotation)
-                         * PLAYER_SHOT_SPEED)
+        shot.velocity = (
+            pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOT_SPEED
+        )

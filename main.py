@@ -7,6 +7,15 @@ from constants import *
 from player import Player
 from shot import Shot
 from score import Score
+from states import (
+    countdown_state,
+    paused_state,
+    standard_state,
+    base_state,
+    clear_objects,
+    dead_state,
+    # game_over_state
+)
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
 
@@ -18,6 +27,7 @@ def main():
     font = pygame.font.Font(None, 74)
     score_font = pygame.font.SysFont("monospace", 52)
     small_font = pygame.font.Font(None, 36)
+    dead_font = pygame.font.Font(None, 128)
 
     # Creates clock and change in time
     clock = pygame.time.Clock()
@@ -25,29 +35,19 @@ def main():
 
     # Sets base variables for game logic
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    icon_index = 0
+    respawn_timer = 3.5
+    start_time = 0.1
+    countdown_timer = 0
+    state = "Init"
 
     # Sets base groups for game objects
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
     shots = pygame.sprite.Group()
+    score_draw = pygame.sprite.Group()
 
-    # Sets player and game groups and variable
-    Player.containers = (updatable, drawable)
-    Shot.containers = (updatable, drawable, shots)
-    Score.containers = (updatable, drawable)
-    player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-    score = Score(score_font)
-
-    # Sets asteroid groups and field variable. Enables asteroids to spawn
-    Asteroid.containers = (asteroids, updatable, drawable)
-    AsteroidField.containers = (updatable)
-    asteroid_field = AsteroidField()
-
-    # Sets initial pause values
-    paused = False
-    countdown_active = False
-    countdown_timer = 0
 
     # Actual game loop
     while True:
@@ -61,89 +61,97 @@ def main():
                 return
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if paused and not countdown_active:
-                        paused = False
-                        countdown_active = True
+                    if state in ("Standard", "Countdown"):
+                        state = "Paused"
                         countdown_timer = 3.0 + dt
-                    elif countdown_active:
-                        paused = True
-                        countdown_active = False
-                    elif not paused:
-                        paused = True
-                elif event.key == pygame.K_q and paused and not countdown_active:
+                    elif state == "Paused":
+                        state = "Countdown"
+                elif event.key == pygame.K_q and state == "Paused":
                     return
 
-        if paused or countdown_active:
-            # Setting unpause countdown
-            if countdown_active and not paused:
-                countdown_timer -= dt
+        if state == "Init":
+            clear_objects(drawable, updatable, asteroids, shots)
+            score_draw.empty()
+            Player.containers = (updatable, drawable)
+            Shot.containers = (updatable, drawable, shots)
+            Score.containers = (score_draw)
+            Asteroid.containers = (asteroids, updatable, drawable)
+            AsteroidField.containers = (updatable)
+            score = Score(score_font)
+            lives = 3
+            state = "Base"
 
-                # Create countdown protocol
-                if countdown_timer <= 0:
-                    paused = False
-                    countdown_active = False
-                
-                # Countdown screen color overlay
-                screen.fill("#3E0455")
-                for object in drawable:
-                    object.draw(screen)
+        if state == "Base":
+            player, asteroid_field = base_state(
+                drawable,
+                updatable,
+                asteroids,
+                shots,
+                lives
+            )
+            start_time = max(start_time - dt, 0)
+            if start_time <= 0:
+                state = "Standard"
 
-                # Render countdown
-                countdown_text = font.render(f"{int(countdown_timer) + 1}",
-                                             True, "white")
-                text_rect = countdown_text.get_rect(
-                    center = (screen.get_width() // 2,
-                              screen.get_height() // 2)
-                )
+        if state == "Countdown":
+            # Create countdown protocol
+            if countdown_timer <= 0:
+                state = "Standard"
+            countdown_timer -= dt
+            countdown_state(
+                screen,
+                drawable,
+                score_draw,
+                font,
+                player,
+                countdown_timer,
+                lives_icon_points
+            )
 
-                # Semi-transparent overlay for visibility
-                overlay = pygame.Surface((200,100))
-                overlay.set_alpha(128)
-                overlay.fill("black")
-                overlay_rect = overlay.get_rect(
-                    center = (screen.get_width() // 2,
-                              screen.get_height() // 2)
-                )
+        # If paused but not unpausing
+        elif state == "Paused":
+            paused_state(screen, font, small_font)
 
-                # Display countdown on-screen
-                screen.blit(overlay, overlay_rect)
-                screen.blit(countdown_text, text_rect)
+        elif state == "Dead":
+            dead_state(
+                screen,
+                dead_font,
+                score_draw,
+                player,
+                drawable,
+                updatable,
+                asteroids,
+                shots,
+                respawn_timer,
+                lives_icon_points
+            )
+            respawn_timer = max(respawn_timer - dt, 0)
+            if respawn_timer <= 0:
+                state = "Base"
 
-            # If paused but not unpausing
-            else:
-                # Pause screen definitions
-                screen.fill("black")
-                pause_text = font.render("PAUSED", True, "white")
-                instructions_text = small_font.render(
-                    "Press Q to quit or Escape to continue", True, "white")
-
-                # Defining pause screen area
-                pause_rect = pause_text.get_rect(
-                    center = (screen.get_width() // 2,
-                              screen.get_height() // 2 - 30)
-                )
-                instructions_rect = instructions_text.get_rect(
-                    center = (screen.get_width() // 2,
-                              screen.get_height() // 2 + 30)
-                )
-
-                # Render pause screen
-                screen.blit(pause_text, pause_rect)
-                screen.blit(instructions_text, instructions_rect)
-
-        # If not paused
-        else:
-            # Sets the screen to black, draws the objects, and updates what can be.
-            screen.fill("black")
-            for object in drawable:
-                object.draw(screen)
-            updatable.update(dt)
+        # If nothing is wrong
+        elif state == "Standard":
+            standard_state(
+                screen,
+                drawable,
+                score_draw,
+                player,
+                lives_icon_points,
+                updatable,
+                dt
+            )
 
             for asteroid in asteroids:
-                # Game over when collision with asteroid
+                # Life logic if player collides with asteroid
                 if asteroid.collision(player):
-                    print("Game over!")
-                    sys.exit()
+                    if player.lives > 1 and player.invuln_timer <= 0:
+                        state = "Dead"
+                        player.invuln_timer = 0.5
+                        lives -= 1
+                        respawn_timer = 3.5
+                    elif player.lives == 1 and player.invuln_timer <= 0:
+                        print("Game over!")
+                        sys.exit()
 
                 # Destroy asteroids when shot
                 for shot in shots:
@@ -156,6 +164,16 @@ def main():
         
         # 60 FPS cap
         dt = clock.tick(60) / 1000
+
+
+def lives_icon_points(position, rotation, radius):
+    location = pygame.Vector2(position)
+    forward = pygame.Vector2(0, 1).rotate(rotation)
+    right = pygame.Vector2(0, 1).rotate(rotation + 90) * radius / 1.5
+    a = location + forward * radius
+    b = location - forward * radius - right
+    c = location - forward * radius + right
+    return [a, b, c]
 
 
 # Runs the program; standard convention in Python is the following command.
