@@ -1,7 +1,9 @@
 # To access virtual environment, use:
 # source .venv/bin/activate
 
+import os
 import sys
+import json
 import pygame
 from constants import *
 from player import Player
@@ -31,6 +33,11 @@ def main():
     dead_font = pygame.font.Font(None, 128)
     high_score_font = pygame.font.SysFont("monospace", 24)
     hisc_name_font = pygame.font.SysFont("monospace", 36)
+
+    if not os.path.exists("highscores.json"):
+        with open("highscores.json", "w") as file:
+            json.dump([], file)
+    
 
     # Creates clock and change in time
     clock = pygame.time.Clock()
