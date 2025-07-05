@@ -23,6 +23,20 @@ from asteroid import Asteroid
 from asteroidfield import AsteroidField
 
 
+def lives_icon_points(position, rotation, radius):
+    location = pygame.Vector2(position)
+    forward = pygame.Vector2(0, 1).rotate(rotation)
+    right = pygame.Vector2(0, 1).rotate(rotation + 90) * radius / 1.5
+    a = location + forward * radius
+    b = location - forward * radius - right
+    c = location - forward * radius + right
+    return [a, b, c]
+
+
+def get_score(dict):
+    return dict["score"]
+
+
 def main():
     # Initializes pygame and fonts
     pygame.init()
@@ -34,10 +48,10 @@ def main():
     high_score_font = pygame.font.SysFont("monospace", 24)
     hisc_name_font = pygame.font.SysFont("monospace", 36)
 
+    # Creates high score file if it does not exist
     if not os.path.exists("highscores.json"):
         with open("highscores.json", "w") as file:
             json.dump([], file)
-    
 
     # Creates clock and change in time
     clock = pygame.time.Clock()
@@ -48,8 +62,8 @@ def main():
     icon_index = 0
     respawn_timer = 3.5
     countdown_timer = 0.0
-    state = "Init"
     high_scores = []
+    state = "Init"
 
     # Sets base groups for game objects
     updatable = pygame.sprite.Group()
@@ -62,10 +76,8 @@ def main():
     # Actual game loop
     while True:
         # while True: is the standard convention for "infinite while loop."
-        # The following for-loop will return None upon performing an action
+        # The following for-loop will return None upon performing an action,
         # which ends the program when the action is performed.
-        # In this case, the actions are "click the quit button on pygame's UI"
-        # and "press the Escape key on the keyboard."
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return
@@ -91,10 +103,19 @@ def main():
                         player_name += str(char.upper())
                     elif (event.key == pygame.K_RETURN or 
                           event.key == pygame.K_KP_ENTER):
+                        new_score = {"name": player_name,
+                                     "score": score.score}
+                        high_scores.append(new_score)
+                        high_scores.sort(key = get_score, reverse = True)
+                        high_scores = high_scores[:15]
+                        with open("highscores.json", "w") as file:
+                            json.dump(high_scores, file)
                         state = "Init"
-                    
 
+        # When game is started, or after a game over
         if state == "Init":
+            with open("highscores.json", "r") as file:
+                high_scores = json.load(file)
             init_state(
                 screen,
                 font,
@@ -117,6 +138,7 @@ def main():
             lives = 3
             start_time = 0.1
 
+        # Spawn objects and begin game
         if state == "Base":
             base_state(
                 drawable,
@@ -130,6 +152,8 @@ def main():
             if start_time <= 0:
                 state = "Standard"
 
+        # If player is unpausing, sets a 3-second countdown so that
+        # the player can get their bearings
         if state == "Countdown":
             # Create countdown protocol
             if countdown_timer <= 0:
@@ -149,6 +173,7 @@ def main():
         elif state == "Paused":
             paused_state(screen, font, small_font)
 
+        # If player is dead
         elif state == "Dead":
             dead_state(
                 screen,
@@ -181,12 +206,14 @@ def main():
                         game_over_timer = 5.0
                         state = "Game Over"
 
+        # If player is dead and out of lives
         elif state == "Game Over":
             game_over_state(screen, font, small_font, score_draw)
             game_over_timer = max(game_over_timer - dt, 0)
             if game_over_timer <= 0:
                 state = "Init"
 
+        # If player's score is better than the high scores list
         elif state == "High Score":
             high_score_state(
                 screen,
@@ -202,7 +229,7 @@ def main():
                 blink_timer = 2
             blink = blink_timer > 1
 
-        # If nothing is wrong
+        # If nothing above is true
         elif state == "Standard":
             standard_state(
                 screen,
@@ -243,16 +270,6 @@ def main():
         
         # 60 FPS cap
         dt = clock.tick(60) / 1000
-
-
-def lives_icon_points(position, rotation, radius):
-    location = pygame.Vector2(position)
-    forward = pygame.Vector2(0, 1).rotate(rotation)
-    right = pygame.Vector2(0, 1).rotate(rotation + 90) * radius / 1.5
-    a = location + forward * radius
-    b = location - forward * radius - right
-    c = location - forward * radius + right
-    return [a, b, c]
 
 
 # Runs the program; standard convention in Python is the following command.
