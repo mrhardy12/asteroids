@@ -12,9 +12,10 @@ from states import (
     paused_state,
     standard_state,
     base_state,
-    clear_objects,
     dead_state,
-    # game_over_state
+    game_over_state,
+    init_state,
+    high_score_state
 )
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
@@ -28,6 +29,8 @@ def main():
     score_font = pygame.font.SysFont("monospace", 52)
     small_font = pygame.font.Font(None, 36)
     dead_font = pygame.font.Font(None, 128)
+    high_score_font = pygame.font.SysFont("monospace", 24)
+    hisc_name_font = pygame.font.SysFont("monospace", 36)
 
     # Creates clock and change in time
     clock = pygame.time.Clock()
@@ -37,9 +40,9 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     icon_index = 0
     respawn_timer = 3.5
-    start_time = 0.1
-    countdown_timer = 0
+    countdown_timer = 0.0
     state = "Init"
+    high_scores = []
 
     # Sets base groups for game objects
     updatable = pygame.sprite.Group()
@@ -68,27 +71,54 @@ def main():
                         state = "Countdown"
                 elif event.key == pygame.K_q and state == "Paused":
                     return
+                elif event.key == pygame.K_y and state == "Init":
+                    state = "Base"
+                elif event.key == pygame.K_n and state == "Init":
+                    return
+                elif state == "High Score":
+                    char = event.unicode
+                    if (event.key == pygame.K_BACKSPACE and
+                        len(player_name) > 0):
+                        player_name = player_name[:-1]
+                    elif char.isalnum() and len(player_name) < 3:
+                        player_name += str(char.upper())
+                    elif (event.key == pygame.K_RETURN or 
+                          event.key == pygame.K_KP_ENTER):
+                        state = "Init"
+                    
 
         if state == "Init":
-            clear_objects(drawable, updatable, asteroids, shots)
-            score_draw.empty()
+            init_state(
+                screen,
+                font,
+                small_font,
+                high_score_font,
+                drawable,
+                updatable,
+                asteroids,
+                shots,
+                score_draw,
+                high_scores
+            )
             Player.containers = (updatable, drawable)
             Shot.containers = (updatable, drawable, shots)
             Score.containers = (score_draw)
             Asteroid.containers = (asteroids, updatable, drawable)
             AsteroidField.containers = (updatable)
             score = Score(score_font)
+            score_threshold = 0
             lives = 3
-            state = "Base"
+            start_time = 0.1
 
         if state == "Base":
-            player, asteroid_field = base_state(
+            base_state(
                 drawable,
                 updatable,
                 asteroids,
                 shots,
-                lives
             )
+            player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+            asteroid_field = AsteroidField()
             start_time = max(start_time - dt, 0)
             if start_time <= 0:
                 state = "Standard"
@@ -97,13 +127,13 @@ def main():
             # Create countdown protocol
             if countdown_timer <= 0:
                 state = "Standard"
-            countdown_timer -= dt
+            countdown_timer = max(countdown_timer - dt, 0)
             countdown_state(
                 screen,
                 drawable,
                 score_draw,
                 font,
-                player,
+                lives,
                 countdown_timer,
                 lives_icon_points
             )
@@ -123,11 +153,47 @@ def main():
                 asteroids,
                 shots,
                 respawn_timer,
-                lives_icon_points
+                lives_icon_points,
+                lives
             )
             respawn_timer = max(respawn_timer - dt, 0)
             if respawn_timer <= 0:
-                state = "Base"
+                high_score = (
+                    len(high_scores) < 15 or
+                    score.score > min(hs["score"] for hs in high_scores)
+                )
+                if lives > 0:
+                    state = "Base"
+                elif lives <= 0:
+                    if high_score:
+                        player_name = ""
+                        blink = True
+                        blink_timer = 2.0
+                        state = "High Score"
+                    else:
+                        game_over_timer = 5.0
+                        state = "Game Over"
+
+        elif state == "Game Over":
+            game_over_state(screen, font, small_font, score_draw)
+            game_over_timer = max(game_over_timer - dt, 0)
+            if game_over_timer <= 0:
+                state = "Init"
+
+        elif state == "High Score":
+            high_score_state(
+                screen,
+                score_draw,
+                blink,
+                font,
+                small_font,
+                hisc_name_font,
+                player_name
+            )
+            blink_timer = max(blink_timer - dt, 0)
+            if blink_timer <= 0:
+                blink_timer = 2
+            blink = blink_timer > 1
 
         # If nothing is wrong
         elif state == "Standard":
@@ -135,30 +201,36 @@ def main():
                 screen,
                 drawable,
                 score_draw,
-                player,
+                lives,
                 lives_icon_points,
                 updatable,
-                dt
+                dt,
+                player
             )
+            player.invuln_timer = max(player.invuln_timer - dt, 0)
 
             for asteroid in asteroids:
                 # Life logic if player collides with asteroid
                 if asteroid.collision(player):
-                    if player.lives > 1 and player.invuln_timer <= 0:
+                    if player.invuln_timer <= 0:
                         state = "Dead"
                         player.invuln_timer = 0.5
                         lives -= 1
                         respawn_timer = 3.5
-                    elif player.lives == 1 and player.invuln_timer <= 0:
-                        print("Game over!")
-                        sys.exit()
 
                 # Destroy asteroids when shot
                 for shot in shots:
                     if asteroid.collision(shot):
                         shot.kill()
                         asteroid.split()
+
+                        old_score = score.score
                         score.gain_score(asteroid)
+                        score_gained = score.score - old_score
+                        score_threshold += score_gained
+                        if score_threshold >= 10000:
+                            score_threshold -= 10000
+                            lives += 1
                         
         pygame.display.flip()
         

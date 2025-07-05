@@ -13,11 +13,11 @@ class Score(pygame.sprite.Sprite):
 
     def gain_score(self, input):
         if input.radius >= 60:
-            self.score += BASE_SCORE
+            self.score += BASE_SCORE + 10
         elif input.radius >= 40:
-            self.score += BASE_SCORE * 4
+            self.score += BASE_SCORE * 4 + 10
         elif input.radius >= 20:
-            self.score += BASE_SCORE * 9
+            self.score += BASE_SCORE * 9 + 10
         else:
             raise Exception("Unexpected error: invalid asteroid radius")
     

@@ -5,23 +5,27 @@ from asteroidfield import AsteroidField
 
 
 def draw_everything(
-        screen,
-        player,
-        drawable,
-        score_draw,
-        lives_icon_points,
-        color = None
-    ):
+    screen,
+    lives,
+    drawable,
+    score_draw,
+    lives_icon_points,
+    color = None
+):
     for object in drawable:
         if isinstance(object, Player) and color is not None:
             continue
         object.draw(screen)
-    for object in score_draw:
-        object.draw(screen)
-    for icon_index in range(player.lives - 1):
+    draw_score(screen, score_draw)
+    for icon_index in range(lives - 1):
         icon_x = LIFE_ICON_START + icon_index * LIFE_ICON_SPACING
         points = lives_icon_points((icon_x, 85), 180, 20)
         pygame.draw.polygon(screen, "white", points, 2)
+
+
+def draw_score(screen, score_draw):
+    for object in score_draw:
+        object.draw(screen)
 
 
 def clear_objects(drawable, updatable, asteroids, shots):
@@ -32,17 +36,17 @@ def clear_objects(drawable, updatable, asteroids, shots):
 
 
 def countdown_state(
-        screen,
-        drawable,
-        score_draw,
-        font,
-        player,
-        countdown_timer,
-        lives_icon_points
-    ):
+    screen,
+    drawable,
+    score_draw,
+    font,
+    lives,
+    countdown_timer,
+    lives_icon_points
+):
     # Countdown screen
     screen.fill("#3E0455")
-    draw_everything(screen, player, drawable, score_draw, lives_icon_points)
+    draw_everything(screen, lives, drawable, score_draw, lives_icon_points)
     
     # Actual countdown rendering
     countdown_text = font.render(f"{int(countdown_timer) + 1}", True, "white")
@@ -102,16 +106,37 @@ def standard_state(
         screen,
         drawable,
         score_draw,
-        player,
+        lives,
         lives_icon_points,
         updatable,
-        dt
+        dt,
+        player
     ):
     # Sets the screen to black, draws the objects, and updates what can be.
     screen.fill("black")
-    draw_everything(screen, player, drawable, score_draw, lives_icon_points)
-    player.invuln_timer = max(player.invuln_timer - dt, 0)
+    draw_everything(screen, lives, drawable, score_draw, lives_icon_points)
     updatable.update(dt)
+
+    if player.position.x < 0:
+        player.position.x = SCREEN_WIDTH
+        player.invuln_timer = 0.2
+    if player.position.x > SCREEN_WIDTH:
+        player.position.x = 0
+        player.invuln_timer = 0.2
+    if player.position.y < 0:
+        player.position.y = SCREEN_HEIGHT
+        player.invuln_timer = 0.2
+    if player.position.y > SCREEN_HEIGHT:
+        player.position.y = 0
+        player.invuln_timer = 0.2
+    
+    for object in drawable:
+        if (object.position.x < -80 or
+            object.position.x > SCREEN_WIDTH + 80 or
+            object.position.y < -80 or
+            object.position.y > SCREEN_HEIGHT + 80
+        ):
+            object.kill()
 
 
 def dead_state(
@@ -124,12 +149,19 @@ def dead_state(
         asteroids,
         shots,
         respawn_timer,
-        lives_icon_points
+        lives_icon_points,
+        lives
     ):
     screen.fill("black")
     color = "red"
-    draw_everything(screen, player, drawable, score_draw,
-                    lives_icon_points, color)
+    draw_everything(
+        screen,
+        lives,
+        drawable,
+        score_draw,
+        lives_icon_points,
+        color
+    )
     dead_text = dead_font.render("You died!", True, "white")
     dead_rect = dead_text.get_rect(
         center = (
@@ -190,8 +222,159 @@ def dead_state(
         clear_objects(drawable, updatable, asteroids, shots)
 
 
-def base_state(drawable, updatable, asteroids, shots, lives):
+def base_state(drawable, updatable, asteroids, shots):
     clear_objects(drawable, updatable, asteroids, shots)
-    player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, lives)
-    asteroid_field = AsteroidField()
-    return player, asteroid_field
+
+
+def game_over_state(screen, font, small_font, score_draw):
+    screen.fill("black")
+    draw_score(screen, score_draw)
+    gaov_text = font.render("Game Over!", True, "white")
+    gaov_small_text = small_font.render(
+        "Better luck next time!",
+        True,
+        "white"
+    )
+
+    gaov_rect = gaov_text.get_rect(
+        center = (
+            screen.get_width() // 2,
+            screen.get_height() // 2 - 30
+        )
+    )
+    gaov_small_rect = gaov_small_text.get_rect(
+        center = (
+            screen.get_width() // 2,
+            screen.get_height() // 2 + 30
+        )
+    )
+
+    screen.blit(gaov_text, gaov_rect)
+    screen.blit(gaov_small_text, gaov_small_rect)
+
+
+def init_state(
+    screen,
+    font,
+    small_font,
+    high_score_font,
+    drawable,
+    updatable,
+    asteroids,
+    shots,
+    score_draw,
+    high_scores
+):
+    clear_objects(drawable, updatable, asteroids, shots)
+    score_draw.empty()
+    screen.fill("black")
+    title_text = font.render("HIGH SCORES", True, "white")
+    title_rect = title_text.get_rect(
+        center = (
+            screen.get_width() // 2,
+            40
+        )
+    )
+
+    command_text = small_font.render(
+        "New game? Press (Y)es or (N)o",
+        True,
+        "white"
+    )
+    command_rect = command_text.get_rect(
+        center = (
+            screen.get_width() // 2,
+            screen.get_height() - 30
+        )
+    )
+
+    def get_string(input, placeholder, variable):
+        if len(input) - 1 < i:
+            return placeholder
+        else:
+            return input[i][variable]
+
+    for i in range(0, 15):
+        # Display ranks
+        rank_text = high_score_font.render(f"{i + 1}.", True, "white")
+        rank_rect = rank_text.get_rect(
+            topright = (
+                screen.get_width() // 8,
+                96 + 36 * i
+            )
+        )
+        screen.blit(rank_text, rank_rect)
+
+        # Display names
+        name_string = get_string(high_scores, "---", "name")
+        name_text = high_score_font.render(name_string, True, "white")
+        name_rect = name_text.get_rect(
+            topleft = (
+                screen.get_width() // 3,
+                96 + 36 * i
+            )
+        )
+        screen.blit(name_text, name_rect)
+
+        # Display scores
+        score_string = str(get_string(high_scores, "-----", "score"))
+        score_text = high_score_font.render(score_string, True, "white")
+        score_rect = score_text.get_rect(
+            topright = (
+                screen.get_width() * 7 // 8,
+                96 + 36 * i
+            )
+        )
+        screen.blit(score_text, score_rect)
+
+    screen.blit(title_text, title_rect)
+    screen.blit(command_text, command_rect)
+
+
+def high_score_state(
+        screen,
+        score_draw,
+        blink,
+        font,
+        small_font,
+        hisc_name_font,
+        player_name
+    ):
+    screen.fill("black")
+    draw_score(screen, score_draw)
+    hisc_text = font.render("NEW HIGH SCORE!", True, "white")
+    hisc_small_text = small_font.render("Enter your name:", True, "white")
+    hisc_name_input = hisc_name_font.render(player_name, True, "white")
+    name_char_width = hisc_name_font.size("A")[0]
+
+    hisc_rect = hisc_text.get_rect(
+        center = (
+            screen.get_width() // 2,
+            screen.get_height() // 2 - 30
+        )
+    )
+    hisc_small_rect = hisc_small_text.get_rect(
+        center = (
+            screen.get_width() // 2,
+            screen.get_height() // 2 + 30
+        )
+    )
+    hisc_name_rect = hisc_name_input.get_rect(
+        topleft = (
+            screen.get_width() // 2 - name_char_width * 1.5,
+            screen.get_height() // 2 + 60
+        )
+    )
+
+    screen.blit(hisc_text, hisc_rect)
+    screen.blit(hisc_small_text, hisc_small_rect)
+    screen.blit(hisc_name_input, hisc_name_rect)
+
+    if blink == True and len(player_name) < 3:
+        base_x = screen.get_width() // 2 - name_char_width * 1.5
+        cursor_x = base_x + name_char_width * len(player_name)
+        cursor_y = screen.get_height() // 2 + 60
+
+        blink_pos = hisc_name_font.render("█", True, "white")
+        blink_rect = blink_pos.get_rect(topleft = (cursor_x, cursor_y))
+        screen.blit(blink_pos, blink_rect)

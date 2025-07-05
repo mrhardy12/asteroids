@@ -5,12 +5,11 @@ from shot import Shot
 
 
 class Player(CircleShape):
-    def __init__(self, x, y, lives):
+    def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.shot_timer = 0
         self.invuln_timer = 0.5
-        self.lives = lives
 
     # Defines a triangle
     def triangle(self):
