@@ -309,7 +309,7 @@ def main():
                         asteroid.split()
 
                         old_score = score.score
-                        score.gain_score(asteroid)
+                        score.gain_score(asteroid, hard_mode)
                         score_gained = score.score - old_score
                         score_threshold += score_gained
                         if score_threshold >= life_threshold:
