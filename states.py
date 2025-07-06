@@ -111,7 +111,7 @@ def standard_state(
         updatable,
         dt,
         player
-    ):
+):
     # Sets the screen to black, draws the objects, and updates what can be.
     screen.fill("black")
     draw_everything(screen, lives, drawable, score_draw, lives_icon_points)
@@ -151,7 +151,7 @@ def dead_state(
         respawn_timer,
         lives_icon_points,
         lives
-    ):
+):
     screen.fill("black")
     color = "red"
     draw_everything(
@@ -263,21 +263,20 @@ def init_state(
     asteroids,
     shots,
     score_draw,
-    high_scores
+    display_scores,
+    hard_mode
 ):
+    def get_string(input, placeholder, variable):
+        if len(input) - 1 < i:
+            return placeholder
+        else:
+            return input[i][variable]
+
     clear_objects(drawable, updatable, asteroids, shots)
     score_draw.empty()
     screen.fill("black")
-    title_text = font.render("HIGH SCORES", True, "white")
-    title_rect = title_text.get_rect(
-        center = (
-            screen.get_width() // 2,
-            40
-        )
-    )
-
     command_text = small_font.render(
-        "New game? Press (Y)es or (N)o",
+        "New game? Press Y for yes, N for no, or H for hard mode!",
         True,
         "white"
     )
@@ -287,48 +286,93 @@ def init_state(
             screen.get_height() - 30
         )
     )
-
-    def get_string(input, placeholder, variable):
-        if len(input) - 1 < i:
-            return placeholder
-        else:
-            return input[i][variable]
-
-    for i in range(0, 15):
-        # Display ranks
-        rank_text = high_score_font.render(f"{i + 1}.", True, "white")
-        rank_rect = rank_text.get_rect(
-            topright = (
-                screen.get_width() // 8,
-                96 + 36 * i
-            )
-        )
-        screen.blit(rank_text, rank_rect)
-
-        # Display names
-        name_string = get_string(high_scores, "---", "name")
-        name_text = high_score_font.render(name_string, True, "white")
-        name_rect = name_text.get_rect(
-            topleft = (
-                screen.get_width() // 3,
-                96 + 36 * i
-            )
-        )
-        screen.blit(name_text, name_rect)
-
-        # Display scores
-        score_string = str(get_string(high_scores, "-----", "score"))
-        score_text = high_score_font.render(score_string, True, "white")
-        score_rect = score_text.get_rect(
-            topright = (
-                screen.get_width() * 7 // 8,
-                96 + 36 * i
-            )
-        )
-        screen.blit(score_text, score_rect)
-
-    screen.blit(title_text, title_rect)
     screen.blit(command_text, command_rect)
+
+    if not hard_mode:
+        title_text = font.render("HIGH SCORES", True, "white")
+        title_rect = title_text.get_rect(
+            center = (
+                screen.get_width() // 2,
+                40
+            )
+        )
+        screen.blit(title_text, title_rect)
+
+        for i in range(0, 15):
+            # Display ranks
+            rank_text = high_score_font.render(f"{i + 1}.", True, "white")
+            rank_rect = rank_text.get_rect(
+                topright = (
+                    screen.get_width() // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(rank_text, rank_rect)
+
+            # Display names
+            name_string = get_string(display_scores, "---", "name")
+            name_text = high_score_font.render(name_string, True, "white")
+            name_rect = name_text.get_rect(
+                topleft = (
+                    screen.get_width() // 3,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(name_text, name_rect)
+
+            # Display scores
+            score_string = str(get_string(display_scores, "-----", "score"))
+            score_text = high_score_font.render(score_string, True, "white")
+            score_rect = score_text.get_rect(
+                topright = (
+                    screen.get_width() * 7 // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(score_text, score_rect)
+
+    else:
+        title_text = font.render("HIGH SCORES (HARD MODE)", True, "white")
+        title_rect = title_text.get_rect(
+            center = (
+                screen.get_width() // 2,
+                40
+            )
+        )
+        screen.blit(title_text, title_rect)
+
+        for i in range(0, 15):
+            # Display ranks
+            rank_text = high_score_font.render(f"{i + 1}.", True, "white")
+            rank_rect = rank_text.get_rect(
+                topright = (
+                    screen.get_width() // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(rank_text, rank_rect)
+
+            # Display names
+            name_string = get_string(display_scores, "---", "name")
+            name_text = high_score_font.render(name_string, True, "white")
+            name_rect = name_text.get_rect(
+                topleft = (
+                    screen.get_width() // 3,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(name_text, name_rect)
+
+            # Display scores
+            score_string = str(get_string(display_scores, "-----", "score"))
+            score_text = high_score_font.render(score_string, True, "white")
+            score_rect = score_text.get_rect(
+                topright = (
+                    screen.get_width() * 7 // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(score_text, score_rect)
 
 
 def high_score_state(
@@ -339,7 +383,7 @@ def high_score_state(
         small_font,
         hisc_name_font,
         player_name
-    ):
+):
     screen.fill("black")
     draw_score(screen, score_draw)
     hisc_text = font.render("NEW HIGH SCORE!", True, "white")
@@ -378,3 +422,25 @@ def high_score_state(
         blink_pos = hisc_name_font.render("█", True, "white")
         blink_rect = blink_pos.get_rect(topleft = (cursor_x, cursor_y))
         screen.blit(blink_pos, blink_rect)
+
+
+def angy_state(
+    screen,
+    drawable,
+    score_draw,
+    lives,
+    lives_icon_points,
+    updatable,
+    dt,
+    player
+):
+    standard_state(
+        screen,
+        drawable,
+        score_draw,
+        lives,
+        lives_icon_points,
+        updatable,
+        dt,
+        player
+    )

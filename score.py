@@ -11,15 +11,22 @@ class Score(pygame.sprite.Sprite):
         self.score = 0
         self.font = font
 
-    def gain_score(self, input):
-        if input.radius >= 60:
-            self.score += BASE_SCORE + 10
-        elif input.radius >= 40:
-            self.score += BASE_SCORE * 4 + 10
-        elif input.radius >= 20:
-            self.score += BASE_SCORE * 9 + 10
+    def gain_score(self, input, hard_mode = False, score_mult = 1):
+        def score_increment(input):
+            if input.radius >= 60:
+                return BASE_SCORE + 10
+            elif input.radius >= 40:
+                return BASE_SCORE * 4 + 10
+            elif input.radius >= 20:
+                return BASE_SCORE * 9 + 10
+            else:
+                raise Exception("Unexpected error: invalid asteroid radius")
+        
+        if hard_mode:
+            score_increase = (score_increment(input) + 100) * score_mult
         else:
-            raise Exception("Unexpected error: invalid asteroid radius")
+            score_increase = score_increment(input)
+        self.score += score_increase
     
     def draw(self, screen):
         score_text = self.font.render(str(self.score), True, "white")
