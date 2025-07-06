@@ -14,7 +14,7 @@ class Asteroid(CircleShape):
     def update(self, dt):
         self.position += self.velocity * dt
     
-    def split(self, field_count = 1):
+    def split(self, hard_mode = False, field_count = 1):
         def spawn_pair(random_angle):
             positive_rotation = self.velocity.rotate(random_angle)
             negative_rotation = self.velocity.rotate(-random_angle)
@@ -28,7 +28,7 @@ class Asteroid(CircleShape):
         if self.radius <= ASTEROID_MIN_RADIUS:
             return
 
-        if field_count > 1:
+        if hard_mode:
             for i in range(field_count):
                 random_angle = random.uniform(20, 200)
                 spawn_pair(random_angle)

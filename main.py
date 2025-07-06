@@ -186,7 +186,7 @@ def main():
             score_mult = 1
             alive_timer = 15
             start_time = max(start_time - dt, 0)
-            life_threshold = 50000 if hard_mode else 10000
+            life_threshold = 25000 if hard_mode else 10000
             if start_time <= 0:
                 state = "Standard"
 
@@ -306,7 +306,7 @@ def main():
                 for shot in shots:
                     if asteroid.collision(shot):
                         shot.kill()
-                        asteroid.split()
+                        asteroid.split(hard_mode)
 
                         old_score = score.score
                         score.gain_score(asteroid, hard_mode)
@@ -348,7 +348,7 @@ def main():
                 for shot in shots:
                     if asteroid.collision(shot):
                         shot.kill()
-                        asteroid.split(field_count)
+                        asteroid.split(hard_mode, field_count)
 
                         old_score = score.score
                         score.gain_score(asteroid, hard_mode, score_mult)
