@@ -123,13 +123,13 @@ def main():
                             high_scores.sort(key = get_score, reverse = True)
                             high_scores = high_scores[:15]
                             with open("highscores.json", "w") as file:
-                                json.dump(high_scores, file)
+                                json.dump(high_scores, file, indent = 2)
                         else:
                             hard_scores.append(new_score)
                             hard_scores.sort(key = get_score, reverse = True)
                             hard_scores = hard_scores[:15]
                             with open("hardscores.json", "w") as file:
-                                json.dump(hard_scores, file)
+                                json.dump(hard_scores, file, indent = 2)
                         state = "Init"
 
         # When game is started, or after a game over
@@ -182,9 +182,9 @@ def main():
             player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
             asteroid_field = AsteroidField()
             field_count = 1
-            angy_timer = 5
+            angy_timer = 10
             score_mult = 1
-            alive_timer = 2
+            alive_timer = 15
             start_time = max(start_time - dt, 0)
             life_threshold = 50000 if hard_mode else 10000
             if start_time <= 0:
@@ -335,7 +335,7 @@ def main():
                 asteroidfield = AsteroidField()
                 field_count += 1
                 score_mult += 1
-                angy_timer = 5
+                angy_timer = 10
 
             for asteroid in asteroids:
                 if asteroid.collision(player):
