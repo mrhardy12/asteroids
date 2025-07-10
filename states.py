@@ -1,16 +1,17 @@
 import pygame
-from constants import *
+
 from player import Player
 from asteroidfield import AsteroidField
+from constants import *
 
 
 def draw_everything(
     screen,
-    lives,
     drawable,
     score_draw,
+    lives,
     lives_icon_points,
-    color = None
+    color=None
 ):
     for object in drawable:
         if isinstance(object, Player) and color is not None:
@@ -35,86 +36,145 @@ def clear_objects(drawable, updatable, asteroids, shots):
     shots.empty()
 
 
-def countdown_state(
+def init_state(
     screen,
     drawable,
+    updatable,
     score_draw,
+    asteroids,
+    shots,
     font,
-    lives,
-    countdown_timer,
-    lives_icon_points
+    small_font,
+    high_score_font,
+    display_scores,
+    hard_mode
 ):
-    # Countdown screen
-    screen.fill("#3E0455")
-    draw_everything(screen, lives, drawable, score_draw, lives_icon_points)
-    
-    # Actual countdown rendering
-    countdown_text = font.render(f"{int(countdown_timer) + 1}", True, "white")
-    countdown_rect = countdown_text.get_rect(
-        center = (
-            screen.get_width() // 2,
-            screen.get_height() // 2
-        )
-    )
+    def get_string(input, placeholder, variable):
+        if len(input) - 1 < i:
+            return placeholder
+        else:
+            return input[i][variable]
 
-    # Semi-transparent overlay for timer visibility
-    count_overlay = pygame.Surface((200, 100))
-    count_overlay.set_alpha(128)
-    count_overlay.fill("black")
-    count_overlay_rect = count_overlay.get_rect(
-        center = (
-            screen.get_width() // 2,
-            screen.get_height() // 2
-        )
-    )
-
-    # Display countdown timer on-screen
-    screen.blit(count_overlay, count_overlay_rect)
-    screen.blit(countdown_text, countdown_rect)
-
-
-def paused_state(screen, font, small_font):
-    # Pause screen definitions
+    clear_objects(drawable, updatable, asteroids, shots)
+    score_draw.empty()
     screen.fill("black")
-    pause_text = font.render("PAUSED", True, "white")
-    instructions_text = small_font.render(
-        "Press Q to quit or Escape to continue",
+    command_text = small_font.render(
+        "New game? Press Y for yes, N for no, or H for hard mode!",
         True,
         "white"
     )
-
-    # Defining pause screen area
-    pause_rect = pause_text.get_rect(
-        center = (
+    command_rect = command_text.get_rect(
+        center=(
             screen.get_width() // 2,
-            screen.get_height() // 2 - 30
+            screen.get_height() - 30
         )
     )
-    instructions_rect = instructions_text.get_rect(
-        center = (
-            screen.get_width() // 2,
-            screen.get_height() // 2 + 30
-        )
-    )
+    screen.blit(command_text, command_rect)
 
-    # Render pause screen
-    screen.blit(pause_text, pause_rect)
-    screen.blit(instructions_text, instructions_rect)
+    if not hard_mode:
+        title_text = font.render("HIGH SCORES", True, "white")
+        title_rect = title_text.get_rect(
+            center=(
+                screen.get_width() // 2,
+                40
+            )
+        )
+        screen.blit(title_text, title_rect)
+
+        for i in range(0, HIGH_SCORE_LIST_LENGTH):
+            # Display ranks
+            rank_text = high_score_font.render(f"{i + 1}.", True, "white")
+            rank_rect = rank_text.get_rect(
+                topright=(
+                    screen.get_width() // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(rank_text, rank_rect)
+
+            # Display names
+            name_string = get_string(display_scores, "---", "name")
+            name_text = high_score_font.render(name_string, True, "white")
+            name_rect = name_text.get_rect(
+                topleft=(
+                    screen.get_width() // 3,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(name_text, name_rect)
+
+            # Display scores
+            score_string = str(get_string(display_scores, "-----", "score"))
+            score_text = high_score_font.render(score_string, True, "white")
+            score_rect = score_text.get_rect(
+                topright=(
+                    screen.get_width() * 7 // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(score_text, score_rect)
+
+    else:
+        title_text = font.render("HIGH SCORES (HARD MODE)", True, "white")
+        title_rect = title_text.get_rect(
+            center=(
+                screen.get_width() // 2,
+                40
+            )
+        )
+        screen.blit(title_text, title_rect)
+
+        for i in range(0, HIGH_SCORE_LIST_LENGTH):
+            # Display ranks
+            rank_text = high_score_font.render(f"{i + 1}.", True, "white")
+            rank_rect = rank_text.get_rect(
+                topright=(
+                    screen.get_width() // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(rank_text, rank_rect)
+
+            # Display names
+            name_string = get_string(display_scores, "---", "name")
+            name_text = high_score_font.render(name_string, True, "white")
+            name_rect = name_text.get_rect(
+                topleft=(
+                    screen.get_width() // 3,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(name_text, name_rect)
+
+            # Display scores
+            score_string = str(get_string(display_scores, "-----", "score"))
+            score_text = high_score_font.render(score_string, True, "white")
+            score_rect = score_text.get_rect(
+                topright=(
+                    screen.get_width() * 7 // 8,
+                    96 + 36 * i
+                )
+            )
+            screen.blit(score_text, score_rect)
+
+
+def base_state(drawable, updatable, asteroids, shots):
+    clear_objects(drawable, updatable, asteroids, shots)
 
 
 def standard_state(
         screen,
         drawable,
+        updatable,
         score_draw,
         lives,
-        lives_icon_points,
-        updatable,
         dt,
-        player
+        player,
+        lives_icon_points
 ):
     # Sets the screen to black, draws the objects, and updates what can be.
     screen.fill("black")
-    draw_everything(screen, lives, drawable, score_draw, lives_icon_points)
+    draw_everything(screen, drawable, score_draw, lives, lives_icon_points)
     updatable.update(dt)
 
     if player.position.x < 0:
@@ -139,32 +199,99 @@ def standard_state(
             object.kill()
 
 
+def paused_state(screen, font, small_font):
+    # Pause screen definitions
+    screen.fill("black")
+    pause_text = font.render("PAUSED", True, "white")
+    instructions_text = small_font.render(
+        "Press Q to quit or Escape to continue",
+        True,
+        "white"
+    )
+
+    # Defining pause screen area
+    pause_rect = pause_text.get_rect(
+        center=(
+            screen.get_width() // 2,
+            screen.get_height() // 2 - 30
+        )
+    )
+    instructions_rect = instructions_text.get_rect(
+        center=(
+            screen.get_width() // 2,
+            screen.get_height() // 2 + 30
+        )
+    )
+
+    # Render pause screen
+    screen.blit(pause_text, pause_rect)
+    screen.blit(instructions_text, instructions_rect)
+
+
+def countdown_state(
+    screen,
+    drawable,
+    score_draw,
+    font,
+    lives,
+    countdown_timer,
+    lives_icon_points
+):
+    # Countdown screen
+    screen.fill("#3E0455")
+    draw_everything(screen, drawable, score_draw, lives, lives_icon_points)
+    
+    # Actual countdown rendering
+    countdown_text = font.render(f"{int(countdown_timer) + 1}", True, "white")
+    countdown_rect = countdown_text.get_rect(
+        center=(
+            screen.get_width() // 2,
+            screen.get_height() // 2
+        )
+    )
+
+    # Semi-transparent overlay for timer visibility
+    count_overlay = pygame.Surface((200, 100))
+    count_overlay.set_alpha(128)
+    count_overlay.fill("black")
+    count_overlay_rect = count_overlay.get_rect(
+        center=(
+            screen.get_width() // 2,
+            screen.get_height() // 2
+        )
+    )
+
+    # Display countdown timer on-screen
+    screen.blit(count_overlay, count_overlay_rect)
+    screen.blit(countdown_text, countdown_rect)
+
+
 def dead_state(
         screen,
-        dead_font,
-        score_draw,
-        player,
         drawable,
         updatable,
+        score_draw,
         asteroids,
         shots,
+        dead_font,
+        lives,
         respawn_timer,
-        lives_icon_points,
-        lives
+        player,
+        lives_icon_points
 ):
     screen.fill("black")
     color = "red"
     draw_everything(
         screen,
-        lives,
         drawable,
         score_draw,
+        lives,
         lives_icon_points,
         color
     )
     dead_text = dead_font.render("You died!", True, "white")
     dead_rect = dead_text.get_rect(
-        center = (
+        center=(
             screen.get_width() // 2,
             screen.get_height() // 2
         )
@@ -173,7 +300,7 @@ def dead_state(
     dead_overlay.set_alpha(128)
     dead_overlay.fill("black")
     dead_overlay_rect = dead_overlay.get_rect(
-        center = (
+        center=(
             screen.get_width() // 2,
             screen.get_height() // 2
         )
@@ -222,11 +349,7 @@ def dead_state(
         clear_objects(drawable, updatable, asteroids, shots)
 
 
-def base_state(drawable, updatable, asteroids, shots):
-    clear_objects(drawable, updatable, asteroids, shots)
-
-
-def game_over_state(screen, font, small_font, score_draw):
+def game_over_state(screen, score_draw, font, small_font):
     screen.fill("black")
     draw_score(screen, score_draw)
     gaov_text = font.render("Game Over!", True, "white")
@@ -237,13 +360,13 @@ def game_over_state(screen, font, small_font, score_draw):
     )
 
     gaov_rect = gaov_text.get_rect(
-        center = (
+        center=(
             screen.get_width() // 2,
             screen.get_height() // 2 - 30
         )
     )
     gaov_small_rect = gaov_small_text.get_rect(
-        center = (
+        center=(
             screen.get_width() // 2,
             screen.get_height() // 2 + 30
         )
@@ -253,135 +376,13 @@ def game_over_state(screen, font, small_font, score_draw):
     screen.blit(gaov_small_text, gaov_small_rect)
 
 
-def init_state(
-    screen,
-    font,
-    small_font,
-    high_score_font,
-    drawable,
-    updatable,
-    asteroids,
-    shots,
-    score_draw,
-    display_scores,
-    hard_mode
-):
-    def get_string(input, placeholder, variable):
-        if len(input) - 1 < i:
-            return placeholder
-        else:
-            return input[i][variable]
-
-    clear_objects(drawable, updatable, asteroids, shots)
-    score_draw.empty()
-    screen.fill("black")
-    command_text = small_font.render(
-        "New game? Press Y for yes, N for no, or H for hard mode!",
-        True,
-        "white"
-    )
-    command_rect = command_text.get_rect(
-        center = (
-            screen.get_width() // 2,
-            screen.get_height() - 30
-        )
-    )
-    screen.blit(command_text, command_rect)
-
-    if not hard_mode:
-        title_text = font.render("HIGH SCORES", True, "white")
-        title_rect = title_text.get_rect(
-            center = (
-                screen.get_width() // 2,
-                40
-            )
-        )
-        screen.blit(title_text, title_rect)
-
-        for i in range(0, 15):
-            # Display ranks
-            rank_text = high_score_font.render(f"{i + 1}.", True, "white")
-            rank_rect = rank_text.get_rect(
-                topright = (
-                    screen.get_width() // 8,
-                    96 + 36 * i
-                )
-            )
-            screen.blit(rank_text, rank_rect)
-
-            # Display names
-            name_string = get_string(display_scores, "---", "name")
-            name_text = high_score_font.render(name_string, True, "white")
-            name_rect = name_text.get_rect(
-                topleft = (
-                    screen.get_width() // 3,
-                    96 + 36 * i
-                )
-            )
-            screen.blit(name_text, name_rect)
-
-            # Display scores
-            score_string = str(get_string(display_scores, "-----", "score"))
-            score_text = high_score_font.render(score_string, True, "white")
-            score_rect = score_text.get_rect(
-                topright = (
-                    screen.get_width() * 7 // 8,
-                    96 + 36 * i
-                )
-            )
-            screen.blit(score_text, score_rect)
-
-    else:
-        title_text = font.render("HIGH SCORES (HARD MODE)", True, "white")
-        title_rect = title_text.get_rect(
-            center = (
-                screen.get_width() // 2,
-                40
-            )
-        )
-        screen.blit(title_text, title_rect)
-
-        for i in range(0, 15):
-            # Display ranks
-            rank_text = high_score_font.render(f"{i + 1}.", True, "white")
-            rank_rect = rank_text.get_rect(
-                topright = (
-                    screen.get_width() // 8,
-                    96 + 36 * i
-                )
-            )
-            screen.blit(rank_text, rank_rect)
-
-            # Display names
-            name_string = get_string(display_scores, "---", "name")
-            name_text = high_score_font.render(name_string, True, "white")
-            name_rect = name_text.get_rect(
-                topleft = (
-                    screen.get_width() // 3,
-                    96 + 36 * i
-                )
-            )
-            screen.blit(name_text, name_rect)
-
-            # Display scores
-            score_string = str(get_string(display_scores, "-----", "score"))
-            score_text = high_score_font.render(score_string, True, "white")
-            score_rect = score_text.get_rect(
-                topright = (
-                    screen.get_width() * 7 // 8,
-                    96 + 36 * i
-                )
-            )
-            screen.blit(score_text, score_rect)
-
-
 def high_score_state(
         screen,
         score_draw,
-        blink,
         font,
         small_font,
         hisc_name_font,
+        blink,
         player_name
 ):
     screen.fill("black")
@@ -392,19 +393,19 @@ def high_score_state(
     name_char_width = hisc_name_font.size("A")[0]
 
     hisc_rect = hisc_text.get_rect(
-        center = (
+        center=(
             screen.get_width() // 2,
             screen.get_height() // 2 - 30
         )
     )
     hisc_small_rect = hisc_small_text.get_rect(
-        center = (
+        center=(
             screen.get_width() // 2,
             screen.get_height() // 2 + 30
         )
     )
     hisc_name_rect = hisc_name_input.get_rect(
-        topleft = (
+        topleft=(
             screen.get_width() // 2 - name_char_width * 1.5,
             screen.get_height() // 2 + 60
         )
@@ -420,27 +421,5 @@ def high_score_state(
         cursor_y = screen.get_height() // 2 + 60
 
         blink_pos = hisc_name_font.render("█", True, "white")
-        blink_rect = blink_pos.get_rect(topleft = (cursor_x, cursor_y))
+        blink_rect = blink_pos.get_rect(topleft=(cursor_x, cursor_y))
         screen.blit(blink_pos, blink_rect)
-
-
-def angy_state(
-    screen,
-    drawable,
-    score_draw,
-    lives,
-    lives_icon_points,
-    updatable,
-    dt,
-    player
-):
-    standard_state(
-        screen,
-        drawable,
-        score_draw,
-        lives,
-        lives_icon_points,
-        updatable,
-        dt,
-        player
-    )

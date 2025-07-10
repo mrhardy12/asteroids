@@ -1,5 +1,7 @@
-import pygame
 import random
+
+import pygame
+
 from circleshape import CircleShape
 from constants import *
 
@@ -14,7 +16,7 @@ class Asteroid(CircleShape):
     def update(self, dt):
         self.position += self.velocity * dt
     
-    def split(self, hard_mode = False, field_count = 1):
+    def split(self, hard_mode, field_count):
         def spawn_pair(random_angle):
             positive_rotation = self.velocity.rotate(random_angle)
             negative_rotation = self.velocity.rotate(-random_angle)

@@ -1,7 +1,8 @@
 import pygame
-from constants import *
-from circleshape import CircleShape
+
 from shot import Shot
+from circleshape import CircleShape
+from constants import *
 
 
 class Player(CircleShape):
@@ -21,7 +22,7 @@ class Player(CircleShape):
         return [a, b, c]
     
     # Draws the player as a triangle
-    def draw(self, screen, color = "white"):
+    def draw(self, screen, color="white"):
         pygame.draw.polygon(screen, color, self.triangle(), 2)
 
     def rotate(self, dt):
@@ -31,7 +32,7 @@ class Player(CircleShape):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
         self.position += forward * PLAYER_SPEED * dt
 
-    # Allows inputs of either WASD or arrow keys to rotate and move the player.
+    # Allows inputs of either WASD or arrow keys to rotate and move the player
     def update(self, dt):
         self.shot_timer -= dt
         keys = pygame.key.get_pressed()

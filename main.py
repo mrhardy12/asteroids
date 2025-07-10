@@ -4,7 +4,9 @@
 import os
 import sys
 import json
+
 import pygame
+
 from shot import Shot
 from score import Score
 from player import Player
@@ -12,15 +14,14 @@ from asteroid import Asteroid
 from asteroidfield import AsteroidField
 from constants import *
 from states import (
-    countdown_state,
-    paused_state,
-    standard_state,
+    init_state,
     base_state,
+    standard_state,
+    paused_state,
+    countdown_state,
     dead_state,
     game_over_state,
-    init_state,
-    high_score_state,
-    angy_state
+    high_score_state
 )
 
 
@@ -43,9 +44,9 @@ def main():
     pygame.init()
     pygame.font.init()
     font = pygame.font.Font(None, 74)
-    score_font = pygame.font.SysFont("monospace", 52)
     small_font = pygame.font.Font(None, 36)
     dead_font = pygame.font.Font(None, 128)
+    score_font = pygame.font.SysFont("monospace", 52)
     high_score_font = pygame.font.SysFont("monospace", 24)
     hisc_name_font = pygame.font.SysFont("monospace", 36)
 
@@ -64,7 +65,6 @@ def main():
     # Sets base variables for game logic
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     icon_index = 0
-    respawn_timer = 3.5
     countdown_timer = 0.0
     high_scores = []
     hard_scores = []
@@ -121,15 +121,15 @@ def main():
                         if not hard_mode:
                             high_scores.append(new_score)
                             high_scores.sort(key=get_score, reverse=True)
-                            high_scores = high_scores[:15]
+                            high_scores = high_scores[:HIGH_SCORE_LIST_LENGTH]
                             with open("highscores.json", "w") as file:
-                                json.dump(high_scores, file, indent = 2)
+                                json.dump(high_scores, file, indent=2)
                         else:
                             hard_scores.append(new_score)
                             hard_scores.sort(key=get_score, reverse=True)
-                            hard_scores = hard_scores[:15]
+                            hard_scores = hard_scores[:HIGH_SCORE_LIST_LENGTH]
                             with open("hardscores.json", "w") as file:
-                                json.dump(hard_scores, file, indent = 2)
+                                json.dump(hard_scores, file, indent=2)
                         state = "Init"
 
         # When game is started, or after a game over
@@ -144,14 +144,14 @@ def main():
                 display_scores = hard_scores
             init_state(
                 screen,
+                drawable,
+                updatable,
+                score_draw,
+                asteroids,
+                shots,
                 font,
                 small_font,
                 high_score_font,
-                drawable,
-                updatable,
-                asteroids,
-                shots,
-                score_draw,
                 display_scores,
                 hard_mode
             )
@@ -186,9 +186,63 @@ def main():
             score_mult = 1
             alive_timer = 15
             start_time = max(start_time - dt, 0)
-            life_threshold = 25000 if hard_mode else 10000
+            if hard_mode:
+                life_threshold = EXTRA_LIFE_HARD
+            else:
+                life_threshold = EXTRA_LIFE_NORMAL
             if start_time <= 0:
                 state = "Standard"
+
+        # Normal game loop
+        elif state == "Standard":
+            standard_state(
+                screen,
+                drawable,
+                updatable,
+                score_draw,
+                lives,
+                dt,
+                player,
+                lives_icon_points
+            )
+            player.invuln_timer = max(player.invuln_timer - dt, 0)
+
+            if hard_mode:
+                alive_timer = max(alive_timer - dt, 0)
+                if alive_timer <= 0:  # After 15 seconds
+                    angy_timer = max(angy_timer - dt, 0)
+                    if angy_timer <= 0:  # Every 10 seconds afterwards
+                        asteroidfield = AsteroidField()
+                        field_count += 1
+                        score_mult += 1
+                        angy_timer = 10
+
+            for asteroid in asteroids:
+                # Life logic if player collides with asteroid
+                if asteroid.collision(player):
+                    if player.invuln_timer <= 0:
+                        state = "Dead"
+                        player.invuln_timer = 0.5
+                        lives -= 1
+                        respawn_timer = RESPAWN_TIME
+
+                # Destroy asteroids when shot
+                for shot in shots:
+                    if asteroid.collision(shot):
+                        shot.kill()
+                        asteroid.split(hard_mode, field_count)
+
+                        old_score = score.score
+                        score.gain_score(asteroid, hard_mode, score_mult)
+                        score_gained = score.score - old_score
+                        score_threshold += score_gained
+                        if score_threshold >= life_threshold:
+                            score_threshold -= life_threshold
+                            lives += 1
+
+        # If paused but not unpausing
+        elif state == "Paused":
+            paused_state(screen, font, small_font)
 
         # If player is unpausing, sets a 3-second countdown so that
         # the player can get their bearings
@@ -206,24 +260,20 @@ def main():
                 lives_icon_points
             )
 
-        # If paused but not unpausing
-        elif state == "Paused":
-            paused_state(screen, font, small_font)
-
         # If player is dead
         elif state == "Dead":
             dead_state(
                 screen,
-                dead_font,
-                score_draw,
-                player,
                 drawable,
                 updatable,
+                score_draw,
                 asteroids,
                 shots,
+                dead_font,
+                lives,
                 respawn_timer,
-                lives_icon_points,
-                lives
+                player,
+                lives_icon_points
             )
             respawn_timer = max(respawn_timer - dt, 0)
             start_time = 0.1
@@ -234,7 +284,7 @@ def main():
                 else:
                     current_scores = hard_scores
                 high_score = (
-                    len(current_scores) < 15 or
+                    len(current_scores) < HIGH_SCORE_LIST_LENGTH or
                     score.score > min(hs["score"] for hs in current_scores)
                 )
                 if lives > 0:
@@ -251,111 +301,27 @@ def main():
 
         # If player is dead and out of lives
         elif state == "Game Over":
-            game_over_state(screen, font, small_font, score_draw)
+            game_over_state(screen, score_draw, font, small_font)
             game_over_timer = max(game_over_timer - dt, 0)
             if game_over_timer <= 0:
                 state = "Init"
 
         # If player's score is better than the high scores list
         elif state == "High Score":
+            blink = blink_timer > 1
             high_score_state(
                 screen,
                 score_draw,
-                blink,
                 font,
                 small_font,
                 hisc_name_font,
+                blink,
                 player_name
             )
             blink_timer = max(blink_timer - dt, 0)
             if blink_timer <= 0:
                 blink_timer = 2.0
-            blink = blink_timer > 1.0
 
-        # If nothing above is true
-        elif state == "Standard":
-            standard_state(
-                screen,
-                drawable,
-                score_draw,
-                lives,
-                lives_icon_points,
-                updatable,
-                dt,
-                player
-            )
-            player.invuln_timer = max(player.invuln_timer - dt, 0)
-
-            if hard_mode:
-                alive_timer = max(alive_timer - dt, 0)
-                if alive_timer <= 0:
-                    state = "Angy"
-
-            for asteroid in asteroids:
-                # Life logic if player collides with asteroid
-                if asteroid.collision(player):
-                    if player.invuln_timer <= 0:
-                        state = "Dead"
-                        player.invuln_timer = 0.5
-                        lives -= 1
-                        respawn_timer = 3.5
-
-                # Destroy asteroids when shot
-                for shot in shots:
-                    if asteroid.collision(shot):
-                        shot.kill()
-                        asteroid.split(hard_mode)
-
-                        old_score = score.score
-                        score.gain_score(asteroid, hard_mode)
-                        score_gained = score.score - old_score
-                        score_threshold += score_gained
-                        if score_threshold >= life_threshold:
-                            score_threshold -= life_threshold
-                            lives += 1
-
-        # If player has been alive in hard mode for 30 seconds
-        elif state == "Angy":
-            angy_state(
-                screen,
-                drawable,
-                score_draw,
-                lives,
-                lives_icon_points,
-                updatable,
-                dt,
-                player
-            )
-            player.invuln_timer = max(player.invuln_timer - dt, 0)
-
-            angy_timer = max(angy_timer - dt, 0)
-            if angy_timer <= 0:
-                asteroidfield = AsteroidField()
-                field_count += 1
-                score_mult += 1
-                angy_timer = 10
-
-            for asteroid in asteroids:
-                if asteroid.collision(player):
-                    if player.invuln_timer <= 0:
-                        state = "Dead"
-                        player.invuln_timer = 0.5
-                        lives -= 1
-                        respawn_timer = 3.5
-
-                for shot in shots:
-                    if asteroid.collision(shot):
-                        shot.kill()
-                        asteroid.split(hard_mode, field_count)
-
-                        old_score = score.score
-                        score.gain_score(asteroid, hard_mode, score_mult)
-                        score_gained = score.score - old_score
-                        score_threshold += score_gained
-                        if score_threshold >= life_threshold:
-                            score_threshold -= life_threshold
-                            lives += 1
-                        
         pygame.display.flip()
         
         # 60 FPS cap
