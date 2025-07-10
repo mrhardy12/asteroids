@@ -11,7 +11,7 @@ class Score(pygame.sprite.Sprite):
         self.score = 0
         self.font = font
 
-    def gain_score(self, input, hard_mode = False, score_mult = 1):
+    def gain_score(self, input, hard_mode=False, score_mult=1):
         def score_increment(input):
             if input.radius >= 60:
                 return BASE_SCORE + 10

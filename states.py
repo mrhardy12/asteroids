@@ -414,7 +414,7 @@ def high_score_state(
     screen.blit(hisc_small_text, hisc_small_rect)
     screen.blit(hisc_name_input, hisc_name_rect)
 
-    if blink == True and len(player_name) < 3:
+    if blink and len(player_name) < 3:
         base_x = screen.get_width() // 2 - name_char_width * 1.5
         cursor_x = base_x + name_char_width * len(player_name)
         cursor_y = screen.get_height() // 2 + 60

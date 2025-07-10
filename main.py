@@ -5,10 +5,12 @@ import os
 import sys
 import json
 import pygame
-from constants import *
-from player import Player
 from shot import Shot
 from score import Score
+from player import Player
+from asteroid import Asteroid
+from asteroidfield import AsteroidField
+from constants import *
 from states import (
     countdown_state,
     paused_state,
@@ -20,8 +22,6 @@ from states import (
     high_score_state,
     angy_state
 )
-from asteroid import Asteroid
-from asteroidfield import AsteroidField
 
 
 def lives_icon_points(position, rotation, radius):
@@ -120,13 +120,13 @@ def main():
                                      "score": score.score}
                         if not hard_mode:
                             high_scores.append(new_score)
-                            high_scores.sort(key = get_score, reverse = True)
+                            high_scores.sort(key=get_score, reverse=True)
                             high_scores = high_scores[:15]
                             with open("highscores.json", "w") as file:
                                 json.dump(high_scores, file, indent = 2)
                         else:
                             hard_scores.append(new_score)
-                            hard_scores.sort(key = get_score, reverse = True)
+                            hard_scores.sort(key=get_score, reverse=True)
                             hard_scores = hard_scores[:15]
                             with open("hardscores.json", "w") as file:
                                 json.dump(hard_scores, file, indent = 2)
@@ -193,7 +193,6 @@ def main():
         # If player is unpausing, sets a 3-second countdown so that
         # the player can get their bearings
         if state == "Countdown":
-            # Create countdown protocol
             if countdown_timer <= 0:
                 state = "Standard"
             countdown_timer = max(countdown_timer - dt, 0)
@@ -244,7 +243,6 @@ def main():
                     scores_timer = 10
                     if high_score:
                         player_name = ""
-                        blink = True
                         blink_timer = 2.0
                         state = "High Score"
                     else:
@@ -271,8 +269,8 @@ def main():
             )
             blink_timer = max(blink_timer - dt, 0)
             if blink_timer <= 0:
-                blink_timer = 2
-            blink = blink_timer > 1
+                blink_timer = 2.0
+            blink = blink_timer > 1.0
 
         # If nothing above is true
         elif state == "Standard":

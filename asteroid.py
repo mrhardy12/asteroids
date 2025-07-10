@@ -14,7 +14,7 @@ class Asteroid(CircleShape):
     def update(self, dt):
         self.position += self.velocity * dt
     
-    def split(self, field_count = 1):
+    def split(self, field_count=1):
         def spawn_pair(random_angle):
             positive_rotation = self.velocity.rotate(random_angle)
             negative_rotation = self.velocity.rotate(-random_angle)
