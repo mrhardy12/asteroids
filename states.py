@@ -13,11 +13,13 @@ def draw_everything(
     lives_icon_points,
     color=None
 ):
+    draw_score(screen, score_draw)
+
     for object in drawable:
         if isinstance(object, Player) and color is not None:
             continue
         object.draw(screen)
-    draw_score(screen, score_draw)
+
     for icon_index in range(lives - 1):
         icon_x = LIFE_ICON_START + icon_index * LIFE_ICON_SPACING
         points = lives_icon_points((icon_x, 85), 180, 20)
@@ -172,7 +174,6 @@ def standard_state(
         player,
         lives_icon_points
 ):
-    # Sets the screen to black, draws the objects, and updates what can be.
     screen.fill("black")
     draw_everything(screen, drawable, score_draw, lives, lives_icon_points)
     updatable.update(dt)
@@ -200,7 +201,6 @@ def standard_state(
 
 
 def paused_state(screen, font, small_font):
-    # Pause screen definitions
     screen.fill("black")
     pause_text = font.render("PAUSED", True, "white")
     instructions_text = small_font.render(
@@ -209,7 +209,6 @@ def paused_state(screen, font, small_font):
         "white"
     )
 
-    # Defining pause screen area
     pause_rect = pause_text.get_rect(
         center=(
             screen.get_width() // 2,
@@ -223,7 +222,6 @@ def paused_state(screen, font, small_font):
         )
     )
 
-    # Render pause screen
     screen.blit(pause_text, pause_rect)
     screen.blit(instructions_text, instructions_rect)
 
@@ -237,11 +235,9 @@ def countdown_state(
     countdown_timer,
     lives_icon_points
 ):
-    # Countdown screen
     screen.fill("#3E0455")
     draw_everything(screen, drawable, score_draw, lives, lives_icon_points)
-    
-    # Actual countdown rendering
+
     countdown_text = font.render(f"{int(countdown_timer) + 1}", True, "white")
     countdown_rect = countdown_text.get_rect(
         center=(
@@ -250,7 +246,6 @@ def countdown_state(
         )
     )
 
-    # Semi-transparent overlay for timer visibility
     count_overlay = pygame.Surface((200, 100))
     count_overlay.set_alpha(128)
     count_overlay.fill("black")
@@ -261,7 +256,6 @@ def countdown_state(
         )
     )
 
-    # Display countdown timer on-screen
     screen.blit(count_overlay, count_overlay_rect)
     screen.blit(countdown_text, countdown_rect)
 

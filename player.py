@@ -12,7 +12,6 @@ class Player(CircleShape):
         self.shot_timer = 0
         self.invuln_timer = 0.5
 
-    # Defines a triangle
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
         right = pygame.Vector2(0, 1).rotate(self.rotation + 90) * self.radius / 1.5
@@ -20,8 +19,7 @@ class Player(CircleShape):
         b = self.position - forward * self.radius - right
         c = self.position - forward * self.radius + right
         return [a, b, c]
-    
-    # Draws the player as a triangle
+
     def draw(self, screen, color="white"):
         pygame.draw.polygon(screen, color, self.triangle(), 2)
 
@@ -32,7 +30,6 @@ class Player(CircleShape):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
         self.position += forward * PLAYER_SPEED * dt
 
-    # Allows inputs of either WASD or arrow keys to rotate and move the player
     def update(self, dt):
         self.shot_timer -= dt
         keys = pygame.key.get_pressed()

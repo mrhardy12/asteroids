@@ -40,7 +40,6 @@ def get_score(dict):
 
 
 def main():
-    # Initializes pygame and fonts
     pygame.init()
     pygame.font.init()
     font = pygame.font.Font(None, 74)
@@ -62,7 +61,6 @@ def main():
     clock = pygame.time.Clock()
     dt = 0
 
-    # Sets base variables for game logic
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     icon_index = 0
     countdown_timer = 0.0
@@ -72,15 +70,12 @@ def main():
     hard_mode = False
     state = "Init"
 
-    # Sets base groups for game objects
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
     shots = pygame.sprite.Group()
     score_draw = pygame.sprite.Group()
 
-
-    # Actual game loop
     while True:
         # while True: is the standard convention for "infinite while loop."
         # The following for-loop will return None upon performing an action,
@@ -218,7 +213,6 @@ def main():
                         angy_timer = 10
 
             for asteroid in asteroids:
-                # Life logic if player collides with asteroid
                 if asteroid.collision(player):
                     if player.invuln_timer <= 0:
                         state = "Dead"
@@ -226,7 +220,6 @@ def main():
                         lives -= 1
                         respawn_timer = RESPAWN_TIME
 
-                # Destroy asteroids when shot
                 for shot in shots:
                     if asteroid.collision(shot):
                         shot.kill()
@@ -260,7 +253,7 @@ def main():
                 lives_icon_points
             )
 
-        # If player is dead
+        # If player dies
         elif state == "Dead":
             dead_state(
                 screen,
@@ -299,14 +292,14 @@ def main():
                         game_over_timer = 5.0
                         state = "Game Over"
 
-        # If player is dead and out of lives
+        # If player dies with no extra lives remaining
         elif state == "Game Over":
             game_over_state(screen, score_draw, font, small_font)
             game_over_timer = max(game_over_timer - dt, 0)
             if game_over_timer <= 0:
                 state = "Init"
 
-        # If player's score is better than the high scores list
+        # If player's score is a record on game over
         elif state == "High Score":
             blink = blink_timer > 1
             high_score_state(
