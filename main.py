@@ -85,7 +85,7 @@ def main():
                 return
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if state in ("Standard", "Countdown", "Angy"):
+                    if state in ("Standard", "Countdown"):
                         state = "Paused"
                         countdown_timer = 3.0 + dt
                     elif state == "Paused":
